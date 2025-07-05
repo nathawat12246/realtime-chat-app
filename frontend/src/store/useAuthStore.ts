@@ -3,7 +3,7 @@ import { axiosInstance } from "../lib/axios";
 import type { SignInForm, SignUpForm } from "../types/index.ts";
 import toast from "react-hot-toast";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001/api" : "/"
+// const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001/api" : "/"
 
 interface AuthType {
   authUser: AuthUser | null;
