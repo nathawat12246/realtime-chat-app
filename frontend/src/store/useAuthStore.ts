@@ -2,8 +2,12 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import type { SignInForm, SignUpForm } from "../types/index.ts";
 import toast from "react-hot-toast";
+import { toast_text } from "../constants/index.ts"
+import { io } from "socket.io-client"
 
 // const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001/api" : "/"
+const BASE_URL = "http://localhost:5001/"
+
 
 interface AuthType {
   authUser: AuthUser | null;
@@ -11,15 +15,20 @@ interface AuthType {
   isLoggingIn: boolean;
   isUpdatingProfile: boolean;
   isCheckingAuth: boolean;
+  onlineUsers: string[],
+  socket: any,
 
   checkAuth: () => void;
   signup: (formData: SignUpForm) => void;
   logout: () => void;
   login: (FormData: SignInForm) => void;
   updateProfile: (data: UpdateProfileType) => void;
+  connectSocket: () => void;
+  disconnectSocket: () => void;
 }
 
 interface AuthUser {
+  _id: string;
   fullName: string;
   email: string;
   profilePic: string;
@@ -31,18 +40,21 @@ interface UpdateProfileType {
   profilePic: string;
 }
 
-export const useAuthStore = create<AuthType>((set) => ({
+export const useAuthStore = create<AuthType>((set, get) => ({
   authUser: null,
   isSigningUp: false,
   isLoggingIn: false,
   isUpdatingProfile: false,
   isCheckingAuth: true,
+  onlineUsers: [],
+  socket: null,
 
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/auth/check");
 
       set({ authUser: res.data });
+      get().connectSocket();
     } catch (error) {
       console.log("Error in checking Auth", error);
 
@@ -58,9 +70,11 @@ export const useAuthStore = create<AuthType>((set) => ({
       const res = await axiosInstance.post("/auth/signup", formData);
       set({ authUser: res.data });
       toast.success("Account created successfully");
+
+      get().connectSocket();
     } catch (error) {
       console.log("Failed to create account:", error);
-      toast.error("Could not create account. Please try again.");
+      toast.error(toast_text.tryagain);
     } finally {
       set({ isSigningUp: false });
     }
@@ -71,9 +85,11 @@ export const useAuthStore = create<AuthType>((set) => ({
       await axiosInstance.post("/auth/logout");
       set({ authUser: null });
       toast.success("Logged out successfully");
+      
+      get().disconnectSocket();
     } catch (error) {
       console.log("Failed to logout account:", error);
-      toast.error("Something went wrong");
+      toast.error(toast_text.error);
     }
   },
 
@@ -83,9 +99,11 @@ export const useAuthStore = create<AuthType>((set) => ({
       const res = await axiosInstance.post("/auth/login", formData);
       set({ authUser: res.data });
       toast.success("Logged in successfully");
+
+      get().connectSocket();
     } catch (error) {
       console.log("Failed to login:", error);
-      toast.error("Could not login. Please try again.");
+      toast.error(toast_text.tryagain);
     } finally {
       set({ isLoggingIn: false });
     }
@@ -101,9 +119,33 @@ export const useAuthStore = create<AuthType>((set) => ({
 
     } catch (error) {
       console.log("Failed to update profile:", error);
-      toast.error("Could not update profile. Please try again.");
+      toast.error(toast_text.tryagain);
     } finally {
       set({ isUpdatingProfile: false });
     }
   },
+
+  connectSocket: async () => {
+    const { authUser } = get()
+    if(!authUser || get().socket?.connected) return;
+
+    const socket = io(BASE_URL,{
+      query: {
+        userId : authUser._id
+      }
+    })
+    socket.connect()
+
+    set({ socket:socket });
+
+    socket.on("getOnlineUsers",(userIds) => {
+      set({onlineUsers: userIds})
+    })
+  },
+
+  disconnectSocket: async () => {
+    if(get().socket?.connected) {
+      get().socket.disconnect();
+    }
+  }
 }));
