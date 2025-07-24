@@ -14,7 +14,7 @@ interface ChatType {
   getUsers: () => void;
   getMessages: (userId: string) => void;
   sendMessage: (messageData: MessageContext) => void;
-  subscibeToMessages: () => void;
+  subscribeToMessages: () => void;
   unsubscribeFromMessages: () => void;
   setSelectedUser: (setSelectedUser: User | null) => void;
 }
@@ -63,13 +63,13 @@ export const useChatStore = create<ChatType>((set, get) => ({
     }
   },
 
-  subscibeToMessages: () => {
+  subscribeToMessages: () => {
     const { selectedUser } = get();
     if (!selectedUser) return;
 
     const socket = useAuthStore.getState().socket;
     // todo: optimize this one later
-    socket.on("newMessages", (newMessage: any) => {
+    socket.on("newMessage", (newMessage: any) => {
       set({ messages: [...get().messages, newMessage] });
     });
   },
@@ -77,7 +77,7 @@ export const useChatStore = create<ChatType>((set, get) => ({
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     // todo: optimize this one later
-    socket.off("newMessages"); 
+    socket.off("newMessage"); 
   },
 
   setSelectedUser: async (selectedUser: User | null) =>
