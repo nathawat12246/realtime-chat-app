@@ -132,7 +132,7 @@ export default function LoginPage() {
 
       {/* Right Side - Image/Pattern */}
       <AuthImagePattern
-        title={"Welcome back!"}
+        title={"Welcome back! && push from dev"}
         subtitle={
           "Sign in to continue your conversations and catch up with your messages."
         }
