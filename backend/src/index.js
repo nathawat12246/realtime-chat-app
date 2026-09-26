@@ -15,6 +15,7 @@ import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
+const frontendUrl = process.env.FRONTEND_URL;
 const PORT = process.env.PORT;
 const __dirname = path.resolve();
 
@@ -23,7 +24,7 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: frontendUrl || "http://localhost:5173",
     credentials: true,
   })
 );
